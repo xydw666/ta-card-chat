@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#EDEDED">
+  <meta name="robots" content="noindex, nofollow">
+  <title>私人聊天</title>
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 微信：会话列表 -->
+    <section class="page page-tab is-active" id="pageList">
+      <header class="wx-header">
+        <h1 class="wx-title">微信</h1>
+        <button class="wx-more" id="btnMore" type="button" aria-label="更多">···</button>
+        <div class="wx-menu" id="wxMenu" hidden>
+          <button type="button" data-act="cards">字卡库</button>
+          <button type="button" data-act="stickers">表情</button>
+          <button type="button" data-act="settings">设置</button>
+        </div>
+      </header>
+      <div class="list-note"><span id="listSub">0 张字卡</span><span>点 ··· 管理</span></div>
+      <main class="scroll" id="convList"></main>
+    </section>
+
+    <!-- 聊天页 -->
+    <section class="page page-chat" id="pageChat" hidden>
+      <header class="wx-header chat-header">
+        <button class="wx-back" id="btnBack" type="button" aria-label="返回">‹</button>
+        <div class="chat-title-wrap">
+          <h1 class="wx-title" id="taName">TA</h1>
+          <p class="chat-status" id="chatStatus" hidden>对方正在输入…</p>
+        </div>
+        <button class="wx-more chat-active" id="btnActive" type="button" aria-label="让 TA 主动发一条">主动</button>
+      </header>
+
+      <main class="chat" id="chatLog" aria-live="polite"></main>
+
+      <div class="sticker-panel" id="stickerPanel" hidden>
+        <div class="sp-tabs">
+          <button type="button" class="is-active" data-tab="emoji">默认表情</button>
+          <button type="button" data-tab="custom">我的表情</button>
+        </div>
+        <div class="sp-grid" id="spEmoji"></div>
+        <div class="sp-grid" id="spCustom" hidden></div>
+      </div>
+
+      <form class="wx-composer" id="composer" autocomplete="off">
+        <button type="button" class="wx-tool" id="btnPinyin" aria-label="拼音打字">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.2" y="6" width="19.6" height="12" rx="2.4"/><path d="M6 10h1.6M9.6 10h1.6M13.2 10h1.6M16.8 10H18M7.2 14h9.6"/></svg>
+        </button>
+        <div class="wx-input">
+          <textarea id="input" rows="1" maxlength="500" placeholder="想对 TA 说些什么？"></textarea>
+        </div>
+        <button type="button" class="wx-tool" id="btnEmoji" aria-label="表情">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"/><path d="M8.4 14.2c.9 1.2 2.1 1.8 3.6 1.8s2.7-.6 3.6-1.8"/></svg>
+        </button>
+        <button type="button" class="wx-tool" id="btnPlus" aria-label="字卡库">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        </button>
+        <button class="wx-send" id="sendBtn" type="submit">发送</button>
+      </form>
+    </section>
+
+    <!-- 通讯录 -->
+    <section class="page page-tab" id="pageContacts" hidden>
+      <header class="wx-header"><h1 class="wx-title">通讯录</h1></header>
+      <main class="scroll">
+        <p class="group-title">我的好友</p>
+        <div class="cell-group">
+          <button type="button" class="cell" id="contactsTa">
+            <span class="conv-avatar" id="contactsTaAvatar">T</span>
+            <span class="cell-name" id="contactsTaName">TA</span>
+            <span class="cell-arrow">›</span>
+          </button>
+        </div>
+      </main>
+    </section>
+
+    <!-- 发现 -->
+    <section class="page page-tab" id="pageDiscover" hidden>
+      <header class="wx-header"><h1 class="wx-title">发现</h1></header>
+      <main class="scroll">
+        <div class="cell-group">
+          <button type="button" class="cell" id="discoverMoments">
+            <span class="cell-icon icon-moments">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M15.2 8.8l-1.8 4.6-4.6 1.8 1.8-4.6z"/></svg>
+            </span>
+            <span class="cell-name">朋友圈</span>
+            <span class="cell-arrow">›</span>
+          </button>
+          <button type="button" class="cell" id="discoverMail">
+            <span class="cell-icon icon-mail">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="5.4" width="18.4" height="13.2" rx="2"/><path d="M3.4 6.6L12 12.8l8.6-6.2"/></svg>
+            </span>
+            <span class="cell-name">信箱</span>
+            <span class="cell-value" id="mailCount"></span>
+            <span class="cell-arrow">›</span>
+          </button>
+        </div>
+        <p class="group-title">只有你们两个人的朋友圈和信箱</p>
+      </main>
+    </section>
+
+    <!-- 我 -->
+    <section class="page page-tab" id="pageMe" hidden>
+      <header class="wx-header"><h1 class="wx-title">我</h1></header>
+      <main class="scroll">
+        <div class="me-card">
+          <div class="me-avatar" id="meAvatar">我</div>
+          <div>
+            <p class="me-name" id="meName">我</p>
+            <p class="me-id">私人聊天 · 仅保存在本机</p>
+          </div>
+        </div>
+        <div class="cell-group">
+          <button type="button" class="cell" id="meCards">
+            <span class="cell-name">字卡库</span>
+            <span class="cell-value" id="meCardsCount">0 张</span>
+            <span class="cell-arrow">›</span>
+          </button>
+          <button type="button" class="cell" id="meStickers">
+            <span class="cell-name">我的表情</span>
+            <span class="cell-value" id="meStickerCount">0 个</span>
+            <span class="cell-arrow">›</span>
+          </button>
+          <button type="button" class="cell" id="meSettings">
+            <span class="cell-name">设置</span>
+            <span class="cell-arrow">›</span>
+          </button>
+        </div>
+      </main>
+    </section>
+
+    <!-- 朋友圈 -->
+    <section class="page page-moments" id="pageMoments" hidden>
+      <header class="wx-header">
+        <button class="wx-back" id="momentsBack" type="button" aria-label="返回">‹</button>
+        <h1 class="wx-title">朋友圈</h1>
+        <button class="wx-more" id="momentsWrite" type="button" aria-label="发表">＋</button>
+      </header>
+      <main class="scroll">
+        <div class="moments-cover">
+          <div class="cover-art"></div>
+          <div class="cover-user">
+            <span class="cover-name" id="coverName">我</span>
+            <span class="cover-avatar" id="coverAvatar">我</span>
+          </div>
+        </div>
+        <div id="momentsFeed"></div>
+      </main>
+      <section class="moment-editor" id="momentEditor" hidden>
+        <div class="me-image-row" id="momentImages"></div>
+        <textarea id="momentInput" rows="2" maxlength="300" placeholder="这一刻的想法…"></textarea>
+        <div class="me-emoji-bar" id="momentEmojiBar" hidden></div>
+        <div class="me-tools">
+          <button class="me-tool" id="momentEmojiBtn" type="button">表情</button>
+          <button class="me-tool" id="momentImageBtn" type="button">图片</button>
+          <span class="me-tip">一条最多 9 张图</span>
+          <button class="pub" id="momentPublish" type="button">发表</button>
+        </div>
+      </section>
+      <input type="file" id="momentFile" accept="image/*" multiple hidden>
+    </section>
+
+    <!-- 信箱 -->
+    <section class="page page-mail" id="pageMail" hidden>
+      <header class="wx-header">
+        <button class="wx-back" id="mailBack" type="button" aria-label="返回">‹</button>
+        <h1 class="wx-title">信箱</h1>
+        <div class="mail-actions">
+          <button class="wx-more" id="mailWrite" type="button">TA 写</button>
+          <button class="wx-more mail-write" id="mailCompose" type="button">提笔</button>
+        </div>
+      </header>
+      <main class="scroll mail-scroll" id="mailList"></main>
+    </section>
+
+    <!-- 底部导航 -->
+    <nav class="wx-tabbar" id="tabbar">
+      <button type="button" class="wx-tab is-active" data-tab="list">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 5.6h11.4a2.6 2.6 0 0 1 2.6 2.6v4.4a2.6 2.6 0 0 1-2.6 2.6H9.4L5.8 18v-2.8H3.4A2.6 2.6 0 0 1 .8 12.6V8.2a2.6 2.6 0 0 1 2.6-2.6z" transform="translate(2.6 1.2)"/></svg>
+        <span>微信</span>
+      </button>
+      <button type="button" class="wx-tab" data-tab="contacts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.4 18.6c.6-3 3-4.6 5.6-4.6s5 1.6 5.6 4.6"/><path d="M16.6 7h4M16.6 11h4M16.6 15h3"/></svg>
+        <span>通讯录</span>
+      </button>
+      <button type="button" class="wx-tab" data-tab="discover">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M15.4 8.6l-1.9 4.9-4.9 1.9 1.9-4.9z"/></svg>
+        <span>发现</span>
+      </button>
+      <button type="button" class="wx-tab" data-tab="me">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.4 19.4c.8-3.6 3.5-5.4 6.6-5.4s5.8 1.8 6.6 5.4"/></svg>
+        <span>我</span>
+      </button>
+    </nav>
+  </div>
+
+  <input type="file" id="stickerFile" accept="image/*" hidden>
+
+  <div class="mask" id="mask" hidden></div>
+  <section class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="面板"></section>
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- 拼音打字悬浮窗：设置里开启后才会出现 -->
+  <div class="typer" id="typer" hidden>
+    <div class="typer-head" id="typerHead">
+      <span class="typer-dot"></span>
+      <span class="typer-hint" id="typerHint">TA 正在敲键盘…</span>
+      <span class="typer-tools">
+        <button type="button" id="typerMin" aria-label="最小化">─</button>
+        <button type="button" id="typerClose" aria-label="收起">×</button>
+      </span>
+    </div>
+    <div class="typer-body">
+      <div class="typer-compose"><span id="typerLetters"></span><i class="caret"></i></div>
+      <div class="typer-cands" id="typerCands"></div>
+    </div>
+    <div class="typer-foot">
+      <button type="button" id="typerAuto">自主拼句</button>
+      <button type="button" id="typerDemo">演示一句</button>
+    </div>
+  </div>
+
+  <script src="./js/store.js"></script>
+  <script src="./js/typing.js"></script>
+  <script src="./js/stickers.js"></script>
+  <script src="./js/profile.js"></script>
+  <script src="./js/chat.js"></script>
+  <script src="./js/pinyin.js"></script>
+  <script src="./js/panel.js"></script>
+  <script src="./js/mail.js"></script>
+  <script src="./js/call.js"></script>
+  <script src="./js/shell.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
