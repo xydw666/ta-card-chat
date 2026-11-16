@@ -4,6 +4,7 @@
 
   var logEl = null;
   var replying = false;
+  var pendingQuote = null;
 
   function log() {
     if (!logEl || !logEl.isConnected) logEl = document.getElementById('chatLog');
@@ -215,11 +216,80 @@
     return Math.random() * 100 < chance;
   }
 
+  function sampleReplyDelay() {
+    var settings = global.TAStore.state.settings;
+    var min = Math.max(0, Number(settings.replyDelayMin) || 0);
+    var max = Math.max(0, Number(settings.replyDelayMax) || 0);
+    if (max < min) {
+      var swap = min;
+      min = max;
+      max = swap;
+    }
+    return min + Math.random() * (max - min);
+  }
+
   function quoteOf(message) {
-    if (!message || message.role !== 'me') return null;
+    if (!message || message.role === 'sys') return null;
     var text = message.stickerId ? '[表情]' : String(message.text || '').trim();
     if (!text) return null;
-    return { role: 'me', text: text.slice(0, 120) };
+    return { role: message.role === 'ta' ? 'ta' : 'me', text: text.slice(0, 120) };
+  }
+
+  /* 我长按消息 → 输入框上方出现引用条，发出去就带上引用 */
+  function clearQuote() {
+    pendingQuote = null;
+    var bar = document.getElementById('quoteBar');
+    if (bar) bar.hidden = true;
+  }
+
+  function startQuote(message) {
+    var quote = quoteOf(message);
+    if (!quote) return;
+    pendingQuote = quote;
+    var bar = document.getElementById('quoteBar');
+    var text = document.getElementById('quoteBarText');
+    if (!bar || !text) return;
+    var author = quote.role === 'ta' ? (global.TAStore.state.taName || 'TA') : '我';
+    text.textContent = '回复 ' + author + '：' + quote.text;
+    bar.hidden = false;
+    var input = document.getElementById('input');
+    if (input) input.focus();
+  }
+
+  function bindQuote() {
+    var close = document.getElementById('quoteBarClose');
+    if (close) close.addEventListener('click', clearQuote);
+    var el = log();
+    if (!el) return;
+
+    function messageFromNode(node) {
+      var wrap = node && node.closest ? node.closest('.msg') : null;
+      if (!wrap) return null;
+      var id = wrap.dataset.id;
+      var list = global.TAStore.state.messages;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) return list[i];
+      }
+      return null;
+    }
+
+    el.addEventListener('contextmenu', function (event) {
+      var message = messageFromNode(event.target);
+      if (!message) return;
+      event.preventDefault();
+      startQuote(message);
+    });
+
+    var pressTimer = 0;
+    el.addEventListener('touchstart', function (event) {
+      var message = messageFromNode(event.target);
+      clearTimeout(pressTimer);
+      if (!message) return;
+      pressTimer = setTimeout(function () { startQuote(message); }, 480);
+    }, { passive: true });
+    ['touchend', 'touchcancel', 'touchmove'].forEach(function (name) {
+      el.addEventListener(name, function () { clearTimeout(pressTimer); }, { passive: true });
+    });
   }
 
   function markRead(message) {
@@ -275,7 +345,7 @@
       if (global.TAProfile) global.TAProfile.maybeTaChange();
 
       replying = false;
-    }, delay + Math.random() * 900);
+    }, delay);
   }
 
   function pushTa(text) {
@@ -358,14 +428,15 @@
       role: 'me',
       text: content,
       stickerId: '',
-      at: Date.now()
+      at: Date.now(),
+      quote: pendingQuote
     };
     global.TAStore.addMessage(userMessage);
     appendMessage(userMessage, previous);
     refreshList();
+    clearQuote();
 
-    var delay = Math.max(0, Number(global.TAStore.state.settings.replyDelay) || 0);
-    replyWithCard(userMessage, delay, userMessage);
+    replyWithCard(userMessage, sampleReplyDelay(), userMessage);
     return true;
   }
 
@@ -389,7 +460,7 @@
     appendMessage(message, previous);
     refreshList();
 
-    var delay = Math.max(0, Number(global.TAStore.state.settings.replyDelay) || 0);
+    var delay = sampleReplyDelay();
     replyWithCard(message, delay, message);
     return true;
   }
@@ -426,6 +497,7 @@
     logEl = document.getElementById('chatLog');
     if (!logEl) return;
     renderAll();
+    bindQuote();
     scheduleActive();
     global.TAStore.on('settings', scheduleActive);
     global.TAStore.on('messages:clear', function () {

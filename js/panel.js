@@ -498,9 +498,15 @@
       '    <input id="stName" type="text" maxlength="24" value="' + esc(state.taName) + '">',
       '  </section>',
       '  <section class="block">',
-      '    <div class="setting-row">',
-      '      <div><p class="setting-title">字卡回复时间</p><p class="setting-sub">TA 收到消息后等多久再回，0 秒就是立刻</p></div>',
-      '      <div class="row-inline"><input class="num-input" id="stDelay" type="number" min="0" step="0.5" value="' + (settings.replyDelay / 1000) + '"><span class="hint">秒</span></div>',
+      '    <p class="setting-title">字卡回复时间</p>',
+      '    <p class="setting-sub">每次在最短和最长之间随机挑一个，都是 0 就是立刻；等待时你照样能继续发</p>',
+      '    <div class="setting-row small">',
+      '      <span>最短</span>',
+      '      <div class="row-inline"><input class="num-input" id="stDelayMin" type="number" min="0" step="0.5" value="' + (settings.replyDelayMin / 1000) + '"><span class="hint">秒</span></div>',
+      '    </div>',
+      '    <div class="setting-row small">',
+      '      <span>最长</span>',
+      '      <div class="row-inline"><input class="num-input" id="stDelayMax" type="number" min="0" step="0.5" value="' + (settings.replyDelayMax / 1000) + '"><span class="hint">秒</span></div>',
       '    </div>',
       '  </section>',
       '  <section class="block">',
@@ -575,7 +581,6 @@
       '</div>'
     ].join(''), function (root) {
       var nameInput = root.querySelector('#stName');
-      var delayInput = root.querySelector('#stDelay');
       var activeBtn = root.querySelector('#stActive');
       var activeInput = root.querySelector('#stActiveMin');
       var activeMaxInput = root.querySelector('#stActiveMax');
@@ -636,11 +641,19 @@
         nameInput.value = global.TAStore.state.taName;
       });
 
-      delayInput.addEventListener('input', function () {
-        var seconds = Number(delayInput.value);
-        if (!isFinite(seconds) || seconds < 0) return;
-        global.TAStore.updateSettings({ replyDelay: Math.round(seconds * 1000) });
-      });
+      function bindDelay(id, key) {
+        var input = root.querySelector('#' + id);
+        input.addEventListener('input', function () {
+          var seconds = Number(input.value);
+          if (!isFinite(seconds) || seconds < 0) return;
+          var patch = {};
+          patch[key] = Math.round(seconds * 1000);
+          global.TAStore.updateSettings(patch);
+        });
+      }
+
+      bindDelay('stDelayMin', 'replyDelayMin');
+      bindDelay('stDelayMax', 'replyDelayMax');
 
       paintSwitch(activeBtn, global.TAStore.state.settings.activeOn);
       activeBtn.addEventListener('click', function () {

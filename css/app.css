@@ -1702,6 +1702,34 @@ input[type="range"]::-moz-range-thumb {
 .read-flag:empty {
   display: none;
 }
+.quote-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--wx-bar);
+  border-top: 1px solid var(--wx-line);
+  font-size: 12.5px;
+  color: #8A8A8A;
+}
+.quote-bar[hidden] { display: none; }
+.quote-bar-text {
+  flex: 1;
+  min-width: 0;
+  padding-left: 8px;
+  border-left: 3px solid #C9C9C9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quote-bar-close {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  font-size: 16px;
+  line-height: 1;
+  color: #999;
+}
 .bubble-quote {
   margin-bottom: 6px;
   padding: 6px 8px;

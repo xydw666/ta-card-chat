@@ -46,7 +46,8 @@
       taAvatar: '',
       myAvatar: '',
       settings: {
-        replyDelay: 700,
+        replyDelayMin: 700,
+        replyDelayMax: 3000,
         readNoReplyChance: 5,
         quoteChance: 30,
         avoidRepeat: true,
@@ -206,6 +207,16 @@
     var settings = Object.assign({}, base.settings, raw.settings || {});
     var cards = normalizeCards(raw.cards, base.cards);
 
+    /* 老版本只有一个回复时间，升级成区间时以它为最短、三倍为最长 */
+    var rawSettings = raw.settings || {};
+    var legacyDelay = Math.max(0, Number(rawSettings.replyDelay) || 0);
+    var delayMin = rawSettings.replyDelayMin != null
+      ? Math.max(0, Number(rawSettings.replyDelayMin) || 0)
+      : legacyDelay;
+    var delayMax = rawSettings.replyDelayMax != null
+      ? Math.max(0, Number(rawSettings.replyDelayMax) || 0)
+      : legacyDelay * 3;
+
     var groups = [];
     (Array.isArray(raw.groups) ? raw.groups : []).forEach(function (name) {
       var value = String(name || '').trim();
@@ -227,7 +238,8 @@
       taAvatar: normalizeAvatar(raw.taAvatar),
       myAvatar: normalizeAvatar(raw.myAvatar),
       settings: {
-        replyDelay: Math.max(0, Number(settings.replyDelay) || 0),
+        replyDelayMin: delayMin,
+        replyDelayMax: delayMax,
         readNoReplyChance: clamp(Number(settings.readNoReplyChance), 0, 100, base.settings.readNoReplyChance),
         quoteChance: clamp(Number(settings.quoteChance), 0, 100, base.settings.quoteChance),
         avoidRepeat: settings.avoidRepeat !== false,
