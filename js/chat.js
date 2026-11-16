@@ -59,7 +59,7 @@
   function makeBubble(message) {
     if (message.role === 'sys') {
       var record = document.createElement('div');
-      record.className = 'call-record';
+      record.className = message.pat ? 'pat-record' : 'call-record';
       record.dataset.id = message.id;
       record.textContent = message.text;
       return { wrap: record, text: null, bubble: null };
@@ -273,6 +273,12 @@
       return null;
     }
 
+    /* 双击 TA 头像 = 我拍了拍 TA */
+    el.addEventListener('dblclick', function (event) {
+      if (!event.target.closest) return;
+      if (event.target.closest('.msg.ta .avatar-sm')) pat(false);
+    });
+
     el.addEventListener('contextmenu', function (event) {
       var message = messageFromNode(event.target);
       if (!message) return;
@@ -292,6 +298,24 @@
     });
   }
 
+  /* 拍一拍：居中灰字，不走气泡 */
+  function pat(fromTa) {
+    var taName = global.TAStore.state.taName || 'TA';
+    var list = global.TAStore.state.messages;
+    var previous = list.length ? list[list.length - 1] : null;
+    var message = {
+      id: global.TAStore._uid('msg'),
+      role: 'sys',
+      text: fromTa ? taName + ' 拍了拍 我' : '我 拍了拍 ' + taName,
+      stickerId: '',
+      at: Date.now(),
+      pat: true
+    };
+    global.TAStore.addMessage(message);
+    appendMessage(message, previous);
+    refreshList();
+  }
+
   function markRead(message) {
     if (!message || message.readAt) return;
     global.TAStore.markRead(message.id);
@@ -307,6 +331,10 @@
     if (trigger) {
       /* TA 过一小会儿才看到消息，先补一个已读回执 */
       setTimeout(function () { markRead(trigger); }, 500 + Math.random() * 1200);
+      /* 拍一拍是独立的，已读不回时也可能拍你一下 */
+      if (rollChance(settings.patChance)) {
+        setTimeout(function () { pat(true); }, 800 + Math.random() * 1500);
+      }
       /* 命中已读不回：只留回执，这次不再回复 */
       if (rollChance(settings.readNoReplyChance)) return;
     }

@@ -1702,6 +1702,13 @@ input[type="range"]::-moz-range-thumb {
 .read-flag:empty {
   display: none;
 }
+.pat-record {
+  align-self: center;
+  margin: 12px 0 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #B0B0B0;
+}
 .quote-bar {
   display: flex;
   align-items: center;

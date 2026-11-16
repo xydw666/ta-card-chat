@@ -522,6 +522,11 @@
       '      <div class="stepper"><button type="button" data-for="stQuote" data-step="-5">−</button><input id="stQuote" type="number" min="0" max="100" step="1" value="' + settings.quoteChance + '"><button type="button" data-for="stQuote" data-step="5">+</button></div>',
       '    </div>',
       '    <p class="hint">TA 回复时会带上你刚发的那句话，像微信的引用</p>',
+      '    <div class="setting-row small">',
+      '      <span>拍一拍概率</span>',
+      '      <div class="stepper"><button type="button" data-for="stPat" data-step="-1">−</button><input id="stPat" type="number" min="0" max="100" step="1" value="' + settings.patChance + '"><button type="button" data-for="stPat" data-step="1">+</button></div>',
+      '    </div>',
+      '    <p class="hint">TA 随机拍拍你；你双击 TA 的头像也能拍 TA</p>',
       '  </section>',
       '  <section class="block">',
       '    <div class="setting-row">',
@@ -631,6 +636,7 @@
 
       bindChance('stReadNo', 'readNoReplyChance');
       bindChance('stQuote', 'quoteChance');
+      bindChance('stPat', 'patChance');
 
       paintSwitch(repeatBtn, global.TAStore.state.settings.avoidRepeat);
       paintSwitch(typingBtn, global.TAStore.state.settings.typing);

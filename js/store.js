@@ -50,6 +50,7 @@
         replyDelayMax: 3000,
         readNoReplyChance: 5,
         quoteChance: 30,
+        patChance: 3,
         avoidRepeat: true,
         typing: false,
         letterSpeed: 150,
@@ -112,6 +113,7 @@
         at: Number(item.at) || Date.now(),
         cardId: item.cardId || '',
         readAt: Number(item.readAt) || 0,
+        pat: item.pat === true,
         quote: item.quote && typeof item.quote.text === 'string'
           ? { role: item.quote.role === 'ta' ? 'ta' : 'me', text: String(item.quote.text).slice(0, 200) }
           : null
@@ -242,6 +244,7 @@
         replyDelayMax: delayMax,
         readNoReplyChance: clamp(Number(settings.readNoReplyChance), 0, 100, base.settings.readNoReplyChance),
         quoteChance: clamp(Number(settings.quoteChance), 0, 100, base.settings.quoteChance),
+        patChance: clamp(Number(settings.patChance), 0, 100, base.settings.patChance),
         avoidRepeat: settings.avoidRepeat !== false,
         typing: settings.typing === true,
         letterSpeed: clamp(Number(settings.letterSpeed) === 70 ? 150 : Number(settings.letterSpeed), 20, 2000, base.settings.letterSpeed),
