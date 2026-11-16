@@ -504,6 +504,20 @@
       '    </div>',
       '  </section>',
       '  <section class="block">',
+      '    <p class="setting-title">回复设置</p>',
+      '    <p class="setting-sub">TA 随机行为的触发概率（%），调到 0 就是不触发，修改即时保存</p>',
+      '    <div class="setting-row small">',
+      '      <span>已读不回概率</span>',
+      '      <div class="stepper"><button type="button" data-for="stReadNo" data-step="-5">−</button><input id="stReadNo" type="number" min="0" max="100" step="1" value="' + settings.readNoReplyChance + '"><button type="button" data-for="stReadNo" data-step="5">+</button></div>',
+      '    </div>',
+      '    <p class="hint">命中后这次只显示「已读」回执，TA 不再回复</p>',
+      '    <div class="setting-row small">',
+      '      <span>引用概率</span>',
+      '      <div class="stepper"><button type="button" data-for="stQuote" data-step="-5">−</button><input id="stQuote" type="number" min="0" max="100" step="1" value="' + settings.quoteChance + '"><button type="button" data-for="stQuote" data-step="5">+</button></div>',
+      '    </div>',
+      '    <p class="hint">TA 回复时会带上你刚发的那句话，像微信的引用</p>',
+      '  </section>',
+      '  <section class="block">',
       '    <div class="setting-row">',
       '      <div><p class="setting-title">TA 主动发消息</p><p class="setting-sub">在最短和最长之间随机挑个时间，主动发一张字卡</p></div>',
       '      <button class="switch" id="stActive" type="button" role="switch"></button>',
@@ -585,6 +599,33 @@
         smoothLabel.textContent = current.smooth <= 0 ? '纯随机' : current.smooth + '%';
         speedGroup.classList.toggle('is-off', !current.typing);
       }
+
+      function bindChance(id, key) {
+        var input = root.querySelector('#' + id);
+        if (!input) return;
+        function save(value) {
+          var next = Math.round(Number(value));
+          if (!Number.isFinite(next)) return null;
+          next = Math.max(0, Math.min(100, next));
+          var patch = {};
+          patch[key] = next;
+          global.TAStore.updateSettings(patch);
+          return next;
+        }
+        root.querySelectorAll('[data-for="' + id + '"]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            var next = save(Number(input.value) + Number(button.dataset.step));
+            if (next !== null) input.value = next;
+          });
+        });
+        input.addEventListener('change', function () {
+          var next = save(input.value);
+          input.value = next === null ? global.TAStore.state.settings[key] : next;
+        });
+      }
+
+      bindChance('stReadNo', 'readNoReplyChance');
+      bindChance('stQuote', 'quoteChance');
 
       paintSwitch(repeatBtn, global.TAStore.state.settings.avoidRepeat);
       paintSwitch(typingBtn, global.TAStore.state.settings.typing);

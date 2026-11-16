@@ -88,6 +88,12 @@
       bubble.classList.add('is-sticker');
       bubble.appendChild(makeStickerImage(sticker));
     } else {
+      if (message.quote && message.quote.text) {
+        var quote = document.createElement('div');
+        quote.className = 'bubble-quote';
+        quote.textContent = message.quote.text;
+        bubble.appendChild(quote);
+      }
       text = document.createElement('span');
       text.className = 'text';
       text.textContent = message.text;
@@ -98,10 +104,19 @@
     col.className = 'bubble-col';
     col.appendChild(bubble);
 
+    var meta = document.createElement('div');
+    meta.className = 'msg-meta';
     var time = document.createElement('time');
     time.className = 'msg-time';
     time.textContent = clock(message.at);
-    col.appendChild(time);
+    meta.appendChild(time);
+    if (!isTa) {
+      var read = document.createElement('span');
+      read.className = 'read-flag';
+      read.textContent = message.readAt ? '已读' : '';
+      meta.appendChild(read);
+    }
+    col.appendChild(meta);
 
     if (isTa) {
       wrap.appendChild(avatar);
@@ -194,7 +209,38 @@
     }
   }
 
-  function replyWithCard(previous, delay) {
+  function rollChance(value) {
+    var chance = Number(value);
+    if (!Number.isFinite(chance) || chance <= 0) return false;
+    return Math.random() * 100 < chance;
+  }
+
+  function quoteOf(message) {
+    if (!message || message.role !== 'me') return null;
+    var text = message.stickerId ? '[表情]' : String(message.text || '').trim();
+    if (!text) return null;
+    return { role: 'me', text: text.slice(0, 120) };
+  }
+
+  function markRead(message) {
+    if (!message || message.readAt) return;
+    global.TAStore.markRead(message.id);
+    var el = log();
+    if (!el) return;
+    var flag = el.querySelector('.msg[data-id="' + message.id + '"] .read-flag');
+    if (flag) flag.textContent = '已读';
+  }
+
+  function replyWithCard(previous, delay, trigger) {
+    var settings = global.TAStore.state.settings;
+
+    if (trigger) {
+      /* TA 过一小会儿才看到消息，先补一个已读回执 */
+      setTimeout(function () { markRead(trigger); }, 500 + Math.random() * 1200);
+      /* 命中已读不回：只留回执，这次不再回复 */
+      if (rollChance(settings.readNoReplyChance)) return;
+    }
+
     replying = true;
     var existing = log().querySelector('.is-typing-indicator');
     if (existing) existing.remove();
@@ -219,7 +265,8 @@
         text: card.text || '',
         stickerId: card.stickerId || '',
         at: Date.now(),
-        cardId: card.id
+        cardId: card.id,
+        quote: trigger && rollChance(settings.quoteChance) ? quoteOf(trigger) : null
       };
       global.TAStore.addMessage(taMessage);
 
@@ -228,7 +275,7 @@
       if (global.TAProfile) global.TAProfile.maybeTaChange();
 
       replying = false;
-    }, delay);
+    }, delay + Math.random() * 900);
   }
 
   function pushTa(text) {
@@ -318,7 +365,7 @@
     refreshList();
 
     var delay = Math.max(0, Number(global.TAStore.state.settings.replyDelay) || 0);
-    replyWithCard(userMessage, delay);
+    replyWithCard(userMessage, delay, userMessage);
     return true;
   }
 
@@ -343,7 +390,7 @@
     refreshList();
 
     var delay = Math.max(0, Number(global.TAStore.state.settings.replyDelay) || 0);
-    replyWithCard(message, delay);
+    replyWithCard(message, delay, message);
     return true;
   }
 

@@ -47,6 +47,8 @@
       myAvatar: '',
       settings: {
         replyDelay: 700,
+        readNoReplyChance: 5,
+        quoteChance: 30,
         avoidRepeat: true,
         typing: false,
         letterSpeed: 150,
@@ -103,11 +105,15 @@
     }).map(function (item) {
       return {
         id: item.id || uid('msg'),
-        role: item.role === 'ta' ? 'ta' : 'me',
+        role: item.role === 'ta' ? 'ta' : (item.role === 'sys' ? 'sys' : 'me'),
         text: typeof item.text === 'string' ? String(item.text) : '',
         stickerId: typeof item.stickerId === 'string' ? item.stickerId : '',
         at: Number(item.at) || Date.now(),
-        cardId: item.cardId || ''
+        cardId: item.cardId || '',
+        readAt: Number(item.readAt) || 0,
+        quote: item.quote && typeof item.quote.text === 'string'
+          ? { role: item.quote.role === 'ta' ? 'ta' : 'me', text: String(item.quote.text).slice(0, 200) }
+          : null
       };
     }).slice(-MAX_MESSAGES);
   }
@@ -222,6 +228,8 @@
       myAvatar: normalizeAvatar(raw.myAvatar),
       settings: {
         replyDelay: Math.max(0, Number(settings.replyDelay) || 0),
+        readNoReplyChance: clamp(Number(settings.readNoReplyChance), 0, 100, base.settings.readNoReplyChance),
+        quoteChance: clamp(Number(settings.quoteChance), 0, 100, base.settings.quoteChance),
         avoidRepeat: settings.avoidRepeat !== false,
         typing: settings.typing === true,
         letterSpeed: clamp(Number(settings.letterSpeed) === 70 ? 150 : Number(settings.letterSpeed), 20, 2000, base.settings.letterSpeed),
@@ -448,6 +456,16 @@
       }
       save();
       return message;
+    },
+
+    markRead: function (id) {
+      for (var i = state.messages.length - 1; i >= 0; i--) {
+        if (state.messages[i].id === id) {
+          state.messages[i].readAt = Date.now();
+          save();
+          return;
+        }
+      }
     },
 
     clearMessages: function () {
