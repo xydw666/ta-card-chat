@@ -301,12 +301,16 @@
   /* 拍一拍：居中灰字，不走气泡 */
   function pat(fromTa) {
     var taName = global.TAStore.state.taName || 'TA';
+    var pool = global.TAStore.state.patTexts || [];
+    var template = pool.length ? pool[Math.floor(Math.random() * pool.length)] : '拍了拍{我}';
+    var actor = fromTa ? taName : '我';
+    var target = fromTa ? '我' : taName;
     var list = global.TAStore.state.messages;
     var previous = list.length ? list[list.length - 1] : null;
     var message = {
       id: global.TAStore._uid('msg'),
       role: 'sys',
-      text: fromTa ? taName + ' 拍了拍 我' : '我 拍了拍 ' + taName,
+      text: actor + ' ' + template.split('{我}').join(target),
       stickerId: '',
       at: Date.now(),
       pat: true

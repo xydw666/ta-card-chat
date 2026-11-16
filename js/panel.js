@@ -527,6 +527,7 @@
       '      <div class="stepper"><button type="button" data-for="stPat" data-step="-1">−</button><input id="stPat" type="number" min="0" max="100" step="1" value="' + settings.patChance + '"><button type="button" data-for="stPat" data-step="1">+</button></div>',
       '    </div>',
       '    <p class="hint">TA 随机拍拍你；你双击 TA 的头像也能拍 TA</p>',
+      '    <button class="btn ghost full" id="stPatEdit" type="button">编辑拍一拍内容（可批量、可删除）</button>',
       '  </section>',
       '  <section class="block">',
       '    <div class="setting-row">',
@@ -637,6 +638,7 @@
       bindChance('stReadNo', 'readNoReplyChance');
       bindChance('stQuote', 'quoteChance');
       bindChance('stPat', 'patChance');
+      root.querySelector('#stPatEdit').addEventListener('click', openPatTexts);
 
       paintSwitch(repeatBtn, global.TAStore.state.settings.avoidRepeat);
       paintSwitch(typingBtn, global.TAStore.state.settings.typing);
@@ -740,6 +742,63 @@
         global.TAStore.clearMessages();
         toast('聊天记录已清空');
         close();
+      });
+    });
+  }
+
+  /* ---------------- 拍一拍文案池 ---------------- */
+
+  function openPatTexts() {
+    var pool = global.TAStore.state.patTexts;
+    var listHtml = pool.length ? pool.map(function (text) {
+      return '<span class="pool-chip">' + esc(text) +
+        '<button type="button" data-pat-del="' + esc(text) + '" aria-label="删除">×</button></span>';
+    }).join('') : '<p class="hint pool-empty">文案池空了，先批量加几条；空池时默认「拍了拍」。</p>';
+
+    open([
+      '<div class="sheet-head">',
+      '  <div><h2>拍一拍内容</h2><p class="sheet-sub">每次拍一拍随机抽一条，名字自动补上。</p></div>',
+      '  <button class="sheet-close" type="button" aria-label="关闭">×</button>',
+      '</div>',
+      '<div class="sheet-body">',
+      '  <p class="hint">{我} 会换成被拍的人：TA 拍你时是「我」，你拍 TA 时是 TA 的名字。比如「拍了拍{我}的脑袋」。</p>',
+      '  <div class="pool-panel">' + listHtml + '</div>',
+      '  <button type="button" class="pool-add" data-pat="add">＋ 添加文案（一行一条，可批量）</button>',
+      '  <div class="pool-addbox" id="patAddBox" hidden>',
+      '    <textarea id="patBatch" rows="4" placeholder="一行一条，比如：拍了拍{我}的脑袋"></textarea>',
+      '    <div class="block-foot"><span class="hint">批量加入文案池</span><button class="btn primary" id="patBatchSave" type="button">添加</button></div>',
+      '  </div>',
+      '  <button type="button" class="pool-clear" data-pat="clear">🗑 清空文案池</button>',
+      '</div>'
+    ].join(''), function (root) {
+      root.querySelectorAll('[data-pat-del]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          global.TAStore.removePatText(button.dataset.patDel);
+          openPatTexts();
+        });
+      });
+
+      root.querySelector('[data-pat="add"]').addEventListener('click', function () {
+        var box = root.querySelector('#patAddBox');
+        box.hidden = !box.hidden;
+        if (!box.hidden) root.querySelector('#patBatch').focus();
+      });
+
+      root.querySelector('[data-pat="clear"]').addEventListener('click', function () {
+        if (!global.TAStore.state.patTexts.length) { toast('文案池已经是空的'); return; }
+        if (!window.confirm('清空拍一拍文案池？')) return;
+        global.TAStore.clearPatTexts();
+        toast('文案池已清空');
+        openPatTexts();
+      });
+
+      root.querySelector('#patBatchSave').addEventListener('click', function () {
+        var list = (root.querySelector('#patBatch').value || '').split('\n')
+          .map(function (item) { return item.trim(); }).filter(Boolean);
+        if (!list.length) { toast('先写几条文案'); return; }
+        var result = global.TAStore.addPatTexts(list);
+        toast('已添加 ' + result.added + ' 条' + (result.skipped ? '，跳过 ' + result.skipped + ' 条重复' : ''));
+        openPatTexts();
       });
     });
   }

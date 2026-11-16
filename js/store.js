@@ -68,6 +68,7 @@
         profileMaxHours: 8
       },
       taNames: ['秦梧'],
+      patTexts: ['拍了拍{我}', '拍了拍{我}的脑袋', '揉了揉{我}的头发', '拍了拍{我}说：想你了'],
       myNames: ['我'],
       taAvatars: [],
       myAvatars: [],
@@ -119,6 +120,16 @@
           : null
       };
     }).slice(-MAX_MESSAGES);
+  }
+
+  function normalizePatTexts(list, fallback) {
+    if (!Array.isArray(list)) return fallback.slice();
+    var out = [];
+    list.forEach(function (item) {
+      var value = String(item || '').trim().slice(0, 40);
+      if (value && out.indexOf(value) === -1) out.push(value);
+    });
+    return out.slice(0, 200);
   }
 
   function normalizeStickers(list) {
@@ -262,6 +273,7 @@
         profileMaxHours: clamp(Number(settings.profileMaxHours), 0.1, 100000, base.settings.profileMaxHours)
       },
       taNames: normalizeNames(raw.taNames, taName),
+      patTexts: normalizePatTexts(raw.patTexts, base.patTexts),
       myNames: normalizeNames(raw.myNames, myName),
       taAvatars: normalizeAvatars(raw.taAvatars),
       myAvatars: normalizeAvatars(raw.myAvatars),
@@ -641,6 +653,30 @@
       state[key] = [];
       save();
       emit('profile', state);
+    },
+
+    addPatTexts: function (texts) {
+      var added = 0;
+      var skipped = 0;
+      (texts || []).forEach(function (raw) {
+        var value = String(raw || '').trim().slice(0, 40);
+        if (!value) return;
+        if (state.patTexts.indexOf(value) !== -1) { skipped += 1; return; }
+        state.patTexts.push(value);
+        added += 1;
+      });
+      if (added) save();
+      return { added: added, skipped: skipped };
+    },
+
+    removePatText: function (text) {
+      state.patTexts = state.patTexts.filter(function (item) { return item !== text; });
+      save();
+    },
+
+    clearPatTexts: function () {
+      state.patTexts = [];
+      save();
     },
 
     addAvatars: function (role, urls) {
